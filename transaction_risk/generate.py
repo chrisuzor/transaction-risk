@@ -30,6 +30,47 @@ def generate_dataset(n: int, seed: int) -> tuple[pd.DataFrame, np.ndarray]:
     return frame, labels
 
 
+def generate_shifted_dataset(n: int, seed: int) -> pd.DataFrame:
+    """Synthetic rows from a fixed seed whose feature distributions are shifted.
+
+    Every row is still synthetic. The draws are not the training distributions:
+    amounts, velocity, distance, ages, and the binary flags are all moved.
+    """
+    if n < 10:
+        raise ValueError("n must be at least 10")
+    rng = np.random.default_rng(seed)
+    amount = np.clip(rng.lognormal(mean=5.2, sigma=0.55, size=n), 0.5, 25_000.0)
+    hour = rng.choice(np.array([0, 1, 2, 3, 4, 5, 23]), size=n)
+    dow = rng.integers(5, 7, size=n)
+    merchant = rng.integers(7, 10, size=n)
+    international = rng.random(n) < 0.70
+    mismatch = rng.random(n) < 0.45
+    txn_1h = np.clip(rng.poisson(3.5, size=n), 0, 30)
+    txn_24h = np.clip(txn_1h + rng.poisson(6.0, size=n), 0, 80)
+    txn_24h = np.maximum(txn_24h, txn_1h)
+    mean_amount = np.clip(rng.lognormal(2.4, 0.35, size=n), 0.5, 10_000.0)
+    device_age = rng.integers(0, 14, size=n)
+    account_age = rng.integers(1, 21, size=n)
+    km = np.clip(rng.exponential(800.0, size=n), 0.0, 15_000.0)
+    frame = pd.DataFrame(
+        {
+            "amount": np.round(amount, 2),
+            "hour_of_day": hour.astype(int),
+            "day_of_week": dow.astype(int),
+            "merchant_category": merchant.astype(int),
+            "international": international,
+            "billing_shipping_mismatch": mismatch,
+            "txn_count_1h": txn_1h.astype(int),
+            "txn_count_24h": txn_24h.astype(int),
+            "mean_amount_7d": np.round(mean_amount, 2),
+            "device_age_days": device_age.astype(int),
+            "account_age_days": account_age.astype(int),
+            "km_from_prev": np.round(km, 2),
+        }
+    )
+    return frame[RAW_FIELDS]
+
+
 def known_example() -> dict:
     """Row 0 of the default dataset. Stable for the pinned seed and row count."""
     frame, _ = generate_dataset(N_ROWS, SEED)

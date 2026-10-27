@@ -16,6 +16,7 @@ def test_readme_covers_the_slice():
         "## How to train",
         "## How to run",
         "## Threshold trade-off",
+        "## Drift check",
         "## Out of scope",
     ):
         assert heading in readme
@@ -44,3 +45,11 @@ def test_published_metrics_match_eval_json():
     assert evaluation["stdout"] in card
     assert evaluation["trained_at"] in card
     assert "synthetic" in card.lower()
+    assert "both windows are synthetic" in readme.lower()
+    assert "both windows are synthetic" in card.lower()
+    assert "score_psi=0.0030" in readme
+    assert "score_psi=12.4338" in readme
+    assert "score_psi=0.0030" in card
+    assert "score_psi=12.4338" in card
+    assert "below 0.25" in readme
+    assert "below 0.25" in card

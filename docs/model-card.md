@@ -84,11 +84,17 @@ numpy=2.5.4
 
 Recall-oriented. The rule is the highest threshold on a 0.001 grid with validation recall >= 0.90. The decision is `flag` when the score is greater than or equal to that threshold, and `allow` otherwise. The choice keeps more synthetic fraud labels and accepts more false positives than a 0.50 cutoff. No loss amount is used.
 
+## Drift
+
+Both windows are synthetic. Population stability index is computed against the training split of the seed-42 generator. The unshifted comparison is the test split of that draw. The shifted comparison is `generate_shifted_dataset` with seed 7.
+
+A window is stable when every model-feature PSI and the score PSI are below 0.25. The check at 2026-10-27T01:45:15+01:00 (Africa/Lagos) printed `score_psi=0.0030` and `stable=true` on the unshifted holdout, and `score_psi=12.4338` and `stable=false` on the shifted window. Feature PSI on the shifted window is above 0.25 for every model feature (lowest `billing_shipping_mismatch` at 0.9126, highest `account_age_days` at 12.4372). The 0.25 cutoff is not a loss amount. Rebuild the printout with `python -m transaction_risk.drift`.
+
 ## Limits
 
 - The fit is to the synthetic label process. These metrics are not field performance on real payments.
 - One linear model, with the derived features above. One frozen threshold.
-- No drift monitor, no champion/challenger, and no live traffic.
+- The drift check is offline and synthetic. No live drift monitor, no champion/challenger, and no live traffic.
 - Card-not-present rows only.
 - The score is not a payment-decline reason. This service does not authorize payments.
 - Coefficients are in standardized units (training-set mean and scale).

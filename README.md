@@ -87,11 +87,37 @@ On the held-out test split, at threshold 0.112: precision is 0.3558 and recall i
 Threshold rule: highest threshold on a 0.001 grid with validation recall >= 0.90. Validation recall at this threshold is 0.9045. The synthetic positive rate on the test split is 0.2060.
 <!-- eval:end -->
 
+## Drift check
+
+Both windows are synthetic. The reference is the training split of `generate_dataset(n=20000, seed=42)`. The unshifted holdout is the test split of that same draw. The shifted window is `generate_shifted_dataset(n=3000, seed=7)`. Its amounts, velocity, distance, ages, and flags are drawn from different fixed distributions than training.
+
+The statistic is the population stability index, reference against the comparison window. A feature with at most 10 distinct reference values uses one bin per value. Other features use 10 quantile bins from the reference. A window is stable when every model-feature PSI and the score PSI are below 0.25. A value at or above 0.25 is not stable. The 0.25 cutoff is the usual significant-shift mark for PSI. It is not a loss amount.
+
+```bash
+python -m transaction_risk.drift
+```
+
+Checked at 2026-10-27T01:45:15+01:00 (Africa/Lagos). Unshifted holdout: `stable=true`, `score_psi=0.0030`. Shifted window: `stable=false`, `score_psi=12.4338`.
+
+| Feature | Unshifted PSI | Shifted PSI |
+| --- | ---: | ---: |
+| log_amount | 0.0030 | 6.2854 |
+| night | 0.0018 | 10.4266 |
+| weekend | 0.0008 | 10.4954 |
+| merchant_risk | 0.0000 | 10.1985 |
+| international | 0.0000 | 1.5806 |
+| billing_shipping_mismatch | 0.0004 | 0.9126 |
+| txn_count_1h | 0.0021 | 6.5627 |
+| txn_count_24h | 0.0017 | 6.3973 |
+| amount_over_history | 0.0031 | 9.5442 |
+| device_age_days | 0.0047 | 12.4355 |
+| account_age_days | 0.0037 | 12.4372 |
+| log_km_from_prev | 0.0047 | 3.3246 |
+| score | 0.0030 | 12.4338 |
+
 ## Out of scope
 
-This slice stops at one trained baseline and a score API.
-
-- No drift monitor
+- No live drift monitor. The drift section is an offline check on synthetic windows.
 - No champion/challenger
 - No live traffic
 - No card numbers, customer identifiers, scraped records, or production metrics

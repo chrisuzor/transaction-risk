@@ -19,6 +19,16 @@ EVAL_NAME = "eval.json"
 KNOWN_EXAMPLE_NAME = "known_example.json"
 KNOWN_EXAMPLE_INDEX = 0
 
+# Population stability index. A window is stable when every feature PSI and
+# the score PSI are below this value. Both windows in the drift check are synthetic.
+DRIFT_PSI_THRESHOLD = 0.25
+DRIFT_SHIFT_SEED = 7
+DRIFT_N_BINS = 10
+DRIFT_RULE = (
+    "stable when every feature PSI and the score PSI are below "
+    f"{DRIFT_PSI_THRESHOLD:.2f}"
+)
+
 RAW_FIELDS = [
     "amount",
     "hour_of_day",

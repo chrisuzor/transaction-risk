@@ -45,6 +45,15 @@ jobs:
           TRANSACTION_RISK_MODELS: ${{ runner.temp }}/model
         run: pytest
 
+      - name: Drift check
+        run: |
+          set -euo pipefail
+          python -m transaction_risk.drift | tee "$RUNNER_TEMP/drift.txt"
+          grep -E '^psi_threshold=0.25$' "$RUNNER_TEMP/drift.txt"
+          grep -E '^unshifted_stable=true$' "$RUNNER_TEMP/drift.txt"
+          grep -E '^shifted_stable=false$' "$RUNNER_TEMP/drift.txt"
+          grep -E '^score_psi=' "$RUNNER_TEMP/drift.txt"
+
       - name: Build image
         run: docker build -t transaction-risk:ci .
 
