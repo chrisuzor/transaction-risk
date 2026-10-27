@@ -1,0 +1,14 @@
+{
+  "amount": 46.0,
+  "hour_of_day": 8,
+  "day_of_week": 6,
+  "merchant_category": 5,
+  "international": false,
+  "billing_shipping_mismatch": true,
+  "txn_count_1h": 1,
+  "txn_count_24h": 1,
+  "mean_amount_7d": 16.52,
+  "device_age_days": 145,
+  "account_age_days": 269,
+  "km_from_prev": 49.65
+}

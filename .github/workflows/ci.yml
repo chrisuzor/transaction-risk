@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Train
+        run: |
+          set -euo pipefail
+          python -m transaction_risk.train --output-dir "$RUNNER_TEMP/model" | tee "$RUNNER_TEMP/train.txt"
+          grep -E '^precision=' "$RUNNER_TEMP/train.txt"
+          grep -E '^recall=' "$RUNNER_TEMP/train.txt"
+          grep -E '^false_positives=' "$RUNNER_TEMP/train.txt"
+          grep -E '^false_negatives=' "$RUNNER_TEMP/train.txt"
+
+      - name: Test committed artifact
+        run: pytest
+
+      - name: Test rebuilt artifact
+        env:
+          TRANSACTION_RISK_MODELS: ${{ runner.temp }}/model
+        run: pytest
+
+      - name: Build image
+        run: docker build -t transaction-risk:ci .
+
+      - name: Smoke test image
+        run: |
+          set -euo pipefail
+          docker rm -f transaction-risk-ci >/dev/null 2>&1 || true
+          docker run -d --name transaction-risk-ci -p 8000:8000 transaction-risk:ci
+          trap 'docker rm -f transaction-risk-ci >/dev/null' EXIT
+          ok=0
+          for _ in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health >/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ok" -eq 1
+          python - <<'PY'
+          import json
+          import urllib.request
+          from transaction_risk.scoring import load_artifact, score_payloads
+
+          payload = json.loads(open("models/known_example.json", encoding="utf-8").read())
+          expected = score_payloads(load_artifact(), [payload])[0]
+          request = urllib.request.Request(
+              "http://127.0.0.1:8000/v1/score",
+              data=json.dumps(payload).encode(),
+              headers={"Content-Type": "application/json"},
+          )
+          with urllib.request.urlopen(request, timeout=5) as response:
+              body = json.load(response)
+          assert abs(body["score"] - expected["score"]) < 1e-6, body
+          assert body["decision"] == expected["decision"], body
+          assert body["model_version"] == "baseline-v1"
+          print(body)
+          PY
