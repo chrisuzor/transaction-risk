@@ -54,6 +54,17 @@ jobs:
           grep -E '^shifted_stable=false$' "$RUNNER_TEMP/drift.txt"
           grep -E '^score_psi=' "$RUNNER_TEMP/drift.txt"
 
+      - name: Champion challenger
+        run: |
+          set -euo pipefail
+          python -m transaction_risk.champion_challenger | tee "$RUNNER_TEMP/shadow.txt"
+          grep -E '^agreement_rate=0.6087$' "$RUNNER_TEMP/shadow.txt"
+          grep -E '^disagreement_count=1174$' "$RUNNER_TEMP/shadow.txt"
+          grep -E '^champion_false_positives=985$' "$RUNNER_TEMP/shadow.txt"
+          grep -E '^champion_false_negatives=74$' "$RUNNER_TEMP/shadow.txt"
+          grep -E '^challenger_false_positives=118$' "$RUNNER_TEMP/shadow.txt"
+          grep -E '^challenger_false_negatives=381$' "$RUNNER_TEMP/shadow.txt"
+
       - name: Build image
         run: docker build -t transaction-risk:ci .
 

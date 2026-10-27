@@ -29,6 +29,10 @@ DRIFT_RULE = (
     f"{DRIFT_PSI_THRESHOLD:.2f}"
 )
 
+# Shadow cutoff on the champion scores. Not served. Chosen because a second
+# algorithm fits this linear synthetic label process worse than another threshold.
+CHALLENGER_THRESHOLD = 0.50
+
 RAW_FIELDS = [
     "amount",
     "hour_of_day",

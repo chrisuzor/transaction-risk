@@ -17,6 +17,7 @@ def test_readme_covers_the_slice():
         "## How to run",
         "## Threshold trade-off",
         "## Drift check",
+        "## Champion and challenger",
         "## Out of scope",
     ):
         assert heading in readme
@@ -53,3 +54,15 @@ def test_published_metrics_match_eval_json():
     assert "score_psi=12.4338" in card
     assert "below 0.25" in readme
     assert "below 0.25" in card
+    for line in (
+        "agreement_rate=0.6087",
+        "disagreement_count=1174",
+        "champion_false_positives=985",
+        "champion_false_negatives=74",
+        "challenger_false_positives=118",
+        "challenger_false_negatives=381",
+    ):
+        assert line in readme
+        assert line in card
+    assert "shadow" in readme.lower()
+    assert "second threshold" in readme.lower()

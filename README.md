@@ -115,10 +115,35 @@ Checked at 2026-10-27T01:45:15+01:00 (Africa/Lagos). Unshifted holdout: `stable=
 | log_km_from_prev | 0.0047 | 3.3246 |
 | score | 0.0030 | 12.4338 |
 
+## Champion and challenger
+
+The champion is `baseline-v1`, the logistic regression already in the repo. Its threshold decision is the one that would be served. The challenger is a second threshold on those same scores, not a second algorithm.
+
+A gradient boosting model trained on the same seed and the same split was a worse fit. The synthetic labels are a noisy linear function of the model features, so logistic regression is the matched model. On the test split the boosting fit had higher log loss (0.389 versus 0.374), a higher Brier score (0.122 versus 0.118), and more false positives at the same validation-recall rule (1067 versus 985). The shadow threshold is 0.50. It is the conventional probability cutoff, stricter than the champion's recall-oriented 0.112, and it is not chosen from a loss amount.
+
+The batch is the synthetic test split of `generate_dataset(n=20000, seed=42)`. For each row the script records the champion score, the champion decision, the challenger score, the challenger decision, and whether they disagree. The challenger is shadow-only.
+
+```bash
+python -m transaction_risk.champion_challenger
+```
+
+Checked at 2026-10-27T01:50:25+01:00 (Africa/Lagos):
+
+```
+agreement_rate=0.6087
+disagreement_count=1174
+champion_false_positives=985
+champion_false_negatives=74
+challenger_false_positives=118
+challenger_false_negatives=381
+```
+
+`n_batch=3000` and `agreement_count=1826`. Every disagreement on this batch is a champion `flag` with a challenger `allow`.
+
 ## Out of scope
 
 - No live drift monitor. The drift section is an offline check on synthetic windows.
-- No champion/challenger
+- No live champion/challenger. The comparison above is an offline shadow on one synthetic batch.
 - No live traffic
 - No card numbers, customer identifiers, scraped records, or production metrics
 - No threshold chosen from a monetary loss
